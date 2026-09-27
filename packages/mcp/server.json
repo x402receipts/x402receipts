@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.x402receipts/mcp",
+  "description": "Record the x402 purchases an agent makes as reconciled, auditable receipts, and verify any receipt against the public ledger. Accounting infrastructure for autonomous spending.",
+  "title": "x402receipts",
+  "version": "1.0.0",
+  "websiteUrl": "https://x402receipts.com",
+  "repository": { "url": "https://github.com/x402receipts/x402receipts", "source": "github" },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "x402receipts-mcp",
+      "version": "1.0.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        { "name": "X402RECEIPTS_EVM_PRIVATE_KEY", "description": "Optional. 0x… key holding USDC on Base; pays USD 1 per wallet per calendar month; later uploads that month are free.", "isRequired": false, "isSecret": true },
+        { "name": "X402RECEIPTS_SOLANA_PRIVATE_KEY", "description": "Optional. ed25519 key (hex or base58) holding USDC on Solana.", "isRequired": false, "isSecret": true }
+      ]
+    }
+  ]
+}

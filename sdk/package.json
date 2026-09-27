@@ -1,0 +1,17 @@
+{
+  "name": "x402receipts",
+  "version": "1.0.0",
+  "description": "Record every x402 purchase your agent makes as a reconciled, auditable receipt. One wrapper around the fetch the agent already pays with; no API key — the agent's wallet is the account.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "default": "./dist/index.js" } },
+  "files": ["dist", "README.md"],
+  "scripts": { "build": "tsc -p tsconfig.json", "prepublishOnly": "npm run build" },
+  "keywords": ["x402", "receipts", "accounting", "reconciliation", "audit", "agents", "usdc", "base", "solana", "hedera"],
+  "homepage": "https://x402receipts.com",
+  "repository": { "type": "git", "url": "https://github.com/x402receipts/x402receipts" },
+  "engines": { "node": ">=18" },
+  "devDependencies": { "typescript": "^5" }
+}

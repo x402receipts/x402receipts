@@ -1,0 +1,52 @@
+{
+  "name": "x402receipts-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for x402receipts: record the x402 purchases an agent makes as reconciled, auditable receipts, and verify any receipt against the public ledger.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "x402receipts-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "x402",
+    "receipts",
+    "accounting",
+    "reconciliation",
+    "agents",
+    "usdc",
+    "base",
+    "solana"
+  ],
+  "homepage": "https://x402receipts.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/x402receipts/x402receipts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@x402/evm": "^2.27.0",
+    "@x402/fetch": "^2.27.0",
+    "@x402/svm": "^2.27.0",
+    "@solana/kit": "^5.5.1",
+    "viem": "^2.56.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  },
+  "mcpName": "com.x402receipts/mcp"
+}
