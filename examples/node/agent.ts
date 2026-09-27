@@ -1,7 +1,7 @@
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
 import { ExactEvmScheme } from "@x402/evm";
 import { privateKeyToAccount } from "viem/accounts";
-import { withRegister } from "x402receipts";
+import { withRegister } from "x402receipts-sdk";
 
 const wallet = privateKeyToAccount(process.env.AGENT_PRIVATE_KEY as `0x${string}`);
 

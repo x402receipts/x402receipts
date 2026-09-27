@@ -8,11 +8,11 @@
 
 ## Use it
 
-**In code — one wrapper around the fetch your agent already pays with** (`npm i x402receipts`):
+**In code — one wrapper around the fetch your agent already pays with** (`npm i x402receipts-sdk`):
 
 ```ts
 import { wrapFetchWithPayment } from "@x402/fetch";
-import { withRegister } from "x402receipts";
+import { withRegister } from "x402receipts-sdk";
 
 const register = withRegister(fetch, { endpoint: "https://app.x402receipts.com", payWith: () => pay });
 const pay = wrapFetchWithPayment(register, wallet);
@@ -28,7 +28,7 @@ const pay = wrapFetchWithPayment(register, wallet);
 
 | Path | What |
 |---|---|
-| [`sdk/`](sdk) | the `x402receipts` npm package (single file, no dependencies) |
+| [`sdk/`](sdk) | the `x402receipts-sdk` npm package (single file, no dependencies) |
 | [`packages/mcp/`](packages/mcp) | the `x402receipts-mcp` MCP server |
 | [`examples/`](examples) | plain Node, Vercel AI SDK, LangChain, OpenAI Agents |
 | [`integrations/agentkit/`](integrations/agentkit) | Coinbase AgentKit action provider |

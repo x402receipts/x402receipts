@@ -12,7 +12,7 @@ Each example is the smallest possible agent that pays over x402 and records ever
 Setup for all of them:
 
 ```bash
-npm install x402receipts @x402/fetch @x402/evm viem
+npm install x402receipts-sdk @x402/fetch @x402/evm viem
 export AGENT_PRIVATE_KEY=0x…   # a wallet holding USDC on Base
 ```
 
