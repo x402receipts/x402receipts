@@ -24,10 +24,15 @@ const pay = wrapFetchWithPayment(register, wallet);
 
 **With an AI coding tool**: paste [the integration prompt](https://x402receipts.com/#prompt) into Claude Code or Cursor.
 
+## The format is an open standard
+
+The record, its fingerprint, the Merkle batching, the anchor record and the verification algorithm are published as **[ARR-1 — Agent Receipt Record](spec/arr-1/ARR-1.md)**, released into the public domain (CC0). JSON Schemas are in [`spec/arr-1/`](spec/arr-1). Implement it yourself, or check our implementation against it.
+
 ## In this repo
 
 | Path | What |
 |---|---|
+| [`spec/arr-1/`](spec/arr-1) | the ARR-1 specification and its JSON Schemas (CC0) |
 | [`sdk/`](sdk) | the `x402receipts-sdk` npm package (single file, no dependencies) |
 | [`packages/mcp/`](packages/mcp) | the `x402receipts-mcp` MCP server |
 | [`examples/`](examples) | plain Node, Vercel AI SDK, LangChain, OpenAI Agents |

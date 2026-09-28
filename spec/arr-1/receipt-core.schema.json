@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x402receipts.com/spec/arr-1/receipt-core.schema.json",
+  "title": "ARR-1 receipt core (hashed form)",
+  "description": "The exact object that is canonicalised and hashed to produce a receipt fingerprint. Every property is present, in this form, with null for absent values. Anything not listed here (labels, notes, the seller's signed receipt) is carried alongside the record but is NOT part of the fingerprint.",
+  "type": "object",
+  "required": [
+    "v",
+    "id",
+    "workspaceId",
+    "occurredAt",
+    "network",
+    "payer",
+    "payee",
+    "amount",
+    "currency",
+    "txRef",
+    "resource",
+    "method",
+    "requestHash",
+    "responseHash",
+    "responseStatus",
+    "delivered"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "v": {
+      "const": 1,
+      "description": "Record version."
+    },
+    "id": {
+      "type": "string"
+    },
+    "workspaceId": {
+      "type": "string",
+      "description": "Opaque identifier of the account the record belongs to, assigned by the issuer. Carries no meaning outside it."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "network": {
+      "type": "string"
+    },
+    "payer": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "payee": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "amount": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^-?[0-9]+(\\.[0-9]+)?$"
+    },
+    "currency": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "txRef": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "resource": {
+      "type": "string"
+    },
+    "method": {
+      "type": "string"
+    },
+    "requestHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "responseHash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "responseStatus": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "delivered": {
+      "type": "boolean"
+    }
+  }
+}

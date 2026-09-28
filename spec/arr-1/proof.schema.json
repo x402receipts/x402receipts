@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x402receipts.com/spec/arr-1/proof.schema.json",
+  "title": "ARR-1 proof bundle",
+  "description": "Everything a third party needs to verify one receipt without contacting the issuer again.",
+  "type": "object",
+  "required": [
+    "receipt",
+    "status"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "receipt": {
+      "description": "The receipt core (see receipt-core.schema.json) plus its fingerprint.",
+      "type": "object"
+    },
+    "status": {
+      "enum": [
+        "verified",
+        "recorded",
+        "failed"
+      ],
+      "description": "verified: delivered and anchored. recorded: delivered, not yet anchored. failed: paid, not delivered."
+    },
+    "proof": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "path",
+        "root"
+      ],
+      "properties": {
+        "root": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "hash",
+              "position"
+            ],
+            "properties": {
+              "hash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "position": {
+                "enum": [
+                  "left",
+                  "right"
+                ],
+                "description": "Where the sibling goes when the pair is hashed."
+              }
+            }
+          }
+        }
+      }
+    },
+    "ledger": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Where the root was written.",
+      "properties": {
+        "network": {
+          "type": "string",
+          "description": "e.g. hedera:mainnet"
+        },
+        "topicId": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "integer"
+        },
+        "consensusTimestamp": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string",
+          "format": "uri",
+          "description": "Public URL where the anchor record can be read from the ledger, without the issuer."
+        },
+        "explorer": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "howToVerify": {
+      "type": "string"
+    },
+    "spec": {
+      "type": "string",
+      "format": "uri",
+      "description": "https://x402receipts.com/spec/arr-1"
+    }
+  }
+}

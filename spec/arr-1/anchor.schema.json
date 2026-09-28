@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x402receipts.com/spec/arr-1/anchor.schema.json",
+  "title": "ARR-1 anchor record",
+  "description": "The message written to the public ledger for one batch. It carries the root and nothing about what was bought. Submitted in canonical form (see the specification).",
+  "type": "object",
+  "required": [
+    "v",
+    "app",
+    "workspace",
+    "batch",
+    "root",
+    "count",
+    "from",
+    "to"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "v": {
+      "const": 1
+    },
+    "app": {
+      "type": "string",
+      "description": "Identifier of the issuer, e.g. x402receipts."
+    },
+    "workspace": {
+      "type": "string",
+      "description": "Opaque account identifier."
+    },
+    "batch": {
+      "type": "string",
+      "description": "Opaque batch identifier."
+    },
+    "root": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Merkle root of the batch's receipt fingerprints."
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "How many receipts are in the batch."
+    },
+    "from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "to": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional page where the batch can be inspected."
+    }
+  }
+}

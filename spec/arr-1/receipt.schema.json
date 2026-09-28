@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://x402receipts.com/spec/arr-1/receipt.schema.json",
+  "title": "ARR-1 receipt (submission form)",
+  "description": "A single purchase made by an autonomous agent, as submitted to an ARR-1 issuer. Amounts may be given either in human form (amount + currency) or atomic form (amountAtomic + asset); an issuer normalises atomic to human before computing the fingerprint.",
+  "type": "object",
+  "required": [
+    "id",
+    "occurredAt",
+    "network",
+    "resource",
+    "method",
+    "requestHash",
+    "delivered"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Unique id for this purchase, chosen by the agent. A UUID is recommended. Submitting the same id twice MUST NOT create a second record."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the purchase happened, ISO 8601 with timezone."
+    },
+    "network": {
+      "type": "string",
+      "description": "CAIP-2 identifier of the network the payment settled on, e.g. eip155:8453."
+    },
+    "payer": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Address the payment left. When omitted, the issuer fills it in from the settled payment."
+    },
+    "payee": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Address the payment went to: the supplier's payTo."
+    },
+    "amount": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+      "description": "Amount in human units, as a decimal string. Never a JSON number."
+    },
+    "currency": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Symbol of the asset paid, e.g. USDC."
+    },
+    "amountAtomic": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]+$",
+      "description": "Amount in the asset's smallest unit, e.g. 4000 for 0.004 USDC. Normalised into amount + currency before hashing."
+    },
+    "asset": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Asset contract address or identifier, used with amountAtomic."
+    },
+    "txRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Settlement reference: transaction hash (EVM) or signature (Solana)."
+    },
+    "resource": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "What was bought: the URL of the resource."
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16,
+      "description": "HTTP method used, upper case."
+    },
+    "requestHash": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}$",
+      "description": "sha256 of method + newline + url + newline + request body."
+    },
+    "responseHash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-fA-F]{64}$",
+      "description": "sha256 of the response body."
+    },
+    "responseStatus": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "HTTP status returned by the supplier."
+    },
+    "delivered": {
+      "type": "boolean",
+      "description": "Whether the supplier returned a successful response."
+    },
+    "sellerReceipt": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The supplier's own signed receipt (x402 offer-receipt extension), passed through unchanged."
+    }
+  }
+}
