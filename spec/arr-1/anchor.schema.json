@@ -2,17 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x402receipts.com/spec/arr-1/anchor.schema.json",
   "title": "ARR-1 anchor record",
-  "description": "The message written to the public ledger for one batch. It carries the root and nothing about what was bought. Submitted in canonical form (see the specification).",
+  "description": "A message written to the public ledger. Two record types: a batch anchor (a Merkle root over receipt fingerprints) and a statement anchor (the fingerprint of a period statement). Submitted in canonical form.",
   "type": "object",
   "required": [
     "v",
     "app",
-    "workspace",
-    "batch",
-    "root",
-    "count",
-    "from",
-    "to"
+    "workspace"
   ],
   "additionalProperties": true,
   "properties": {
@@ -53,6 +48,60 @@
       "type": "string",
       "format": "uri",
       "description": "Optional page where the batch can be inspected."
+    },
+    "type": {
+      "enum": [
+        "batch",
+        "statement"
+      ],
+      "description": "Absent means batch, for compatibility with records written before this field existed."
+    },
+    "period": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}$",
+      "description": "Statement anchors only."
+    },
+    "statement": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Statement anchors only: sha256 of the canonical period statement."
+    },
+    "receipts": {
+      "type": "integer",
+      "description": "Statement anchors only."
+    },
+    "unmatched": {
+      "type": "integer",
+      "description": "Statement anchors only: payments with no receipt in the period."
+    },
+    "final": {
+      "type": "boolean",
+      "description": "Statement anchors only."
     }
-  }
+  },
+  "oneOf": [
+    {
+      "title": "batch anchor",
+      "required": [
+        "batch",
+        "root",
+        "count",
+        "from",
+        "to"
+      ]
+    },
+    {
+      "title": "statement anchor",
+      "required": [
+        "type",
+        "period",
+        "statement"
+      ],
+      "properties": {
+        "type": {
+          "const": "statement"
+        }
+      }
+    }
+  ]
 }

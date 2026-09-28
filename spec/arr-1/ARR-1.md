@@ -113,6 +113,18 @@ Integrity says the records are unaltered. Completeness says there are no missing
 
 An issuer SHOULD read from at least two independent sources (for example an indexer and a node), because a single indexer can silently skip a block. The period statement SHOULD carry, per wallet: the number of payments seen on-chain, the number matched, the unmatched list with their settlement references, and the sources and heights used.
 
+<h3 id="s10-1">10.1 The period statement</h3>
+
+An issuer claiming Level 3 SHOULD publish the claim as a document. A **period statement** (<a href="/spec/arr-1/statement.schema.json">`statement.schema.json`</a>) covers one account and one period and carries: the period and whether it is `final` (the period had ended when it was produced); totals spent; how many receipts, delivered, anchored and supplier-signed; **per wallet**, how many payments were seen on-chain, how many matched, and the unmatched ones with their settlement references; every batch of the period with its root and ledger coordinates; and the data sources consulted.
+
+The statement is canonicalised and hashed as in §5, and the hash is anchored as a record of type `statement`:
+
+```
+{"app":"x402receipts","final":false,"period":"2026-09","receipts":59,"statement":"35a53c63e4cbb447256f7961479b273744d29260d7ae93fea6f39532b4496256","type":"statement","unmatched":1,"url":"https://app.x402receipts.com/statement/9254677d-3973-4d60-b510-475c3a4cc0b9/2026-09","v":1,"workspace":"9254677d-3973-4d60-b510-475c3a4cc0b9"}
+```
+
+A `final` statement MUST NOT be replaced: a correction is a new statement for a later period, not a rewrite of a closed one. An interim statement (produced before the period ended) MAY be superseded. Verification is §9 applied to the document: canonicalise, hash, compare with the anchored fingerprint, read that fingerprint from the ledger directly. A live example: [a September statement](https://app.x402receipts.com/statement/9254677d-3973-4d60-b510-475c3a4cc0b9/2026-09) and [its anchor](https://hashscan.io/mainnet/transaction/1790594552.120220104).
+
 The distinction between *funding* and *expense* belongs here. A transfer into an agent's wallet is funding; it is not a purchase and MUST NOT be recorded as one. The expenses are the outgoing payments to suppliers.
 
 ## 11. Supplier-signed receipts
