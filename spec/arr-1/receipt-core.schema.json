@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x402receipts.com/spec/arr-1/receipt-core.schema.json",
   "title": "ARR-1 receipt core (hashed form)",
-  "description": "The exact object that is canonicalised and hashed to produce a receipt fingerprint. Every property is present, in this form, with null for absent values. Anything not listed here (labels, notes, the seller's signed receipt) is carried alongside the record but is NOT part of the fingerprint.",
+  "description": "The exact object that is canonicalised and hashed to produce a receipt fingerprint. Every property listed as required is present, in this form, with null for absent values. `agent` is the one optional property, and is OMITTED rather than set to null when absent, so that records naming no agent keep the fingerprint they had before the field existed. Anything not listed here (labels, notes, the seller's signed receipt) is carried alongside the record but is NOT part of the fingerprint.",
   "type": "object",
   "required": [
     "v",
@@ -30,6 +30,13 @@
     },
     "id": {
       "type": "string"
+    },
+    "agent": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 512,
+      "pattern": "^(uaid:(aid|did):|did:)",
+      "description": "Optional. Which agent made the purchase, as an HCS-14 universal agent identifier (uaid:aid:… or uaid:did:…) or a plain DID. Omitted when absent — never null. Part of the fingerprint when present."
     },
     "workspaceId": {
       "type": "string",

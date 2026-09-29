@@ -1,6 +1,6 @@
 {
   "name": "x402receipts-sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Record every x402 purchase your agent makes as a reconciled, auditable receipt. One wrapper around the fetch the agent already pays with; no API key \u2014 the agent's wallet is the account.",
   "license": "MIT",
   "type": "module",

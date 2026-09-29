@@ -2,7 +2,7 @@
 
 *An open format for verifiable records of what autonomous agents buy.*
 
-**Version** 1.0 · **Status** draft · **Published** 28 September 2026 · **Editor** x402receipts · **Licence** CC0 1.0
+**Version** 1.1 · **Status** draft · **Published** 28 September 2026 · **Updated** 29 September 2026 · **Editor** x402receipts · **Licence** CC0 1.0
 
 Canonical URL: https://x402receipts.com/spec/arr-1 · Schemas in this directory.
 
@@ -23,7 +23,7 @@ The second property is the reason this specification exists. Integrity alone is 
 
 ## 3. Terms
 
-**Receipt** — the record of one purchase. **Core** — the subset of its fields that is hashed. **Fingerprint** — the sha256 of the canonical core. **Batch** — a set of receipts fingerprinted together, typically one account-day. **Root** — the Merkle root of a batch. **Anchor** — the message carrying a root, written to a public ledger. **Proof** — the path from one fingerprint to its root. **Issuer** — the party that keeps the records, batches them and anchors them.
+**Receipt** — the record of one purchase. **Core** — the subset of its fields that is hashed. **Fingerprint** — the sha256 of the canonical core. **Log** — one account's receipts, in the order they were accepted, appended to and never rewritten. **Batch** — the receipts added to the log since the previous checkpoint, typically one account-day. **Tree** — the Merkle tree over the log. **Root** — the head of that tree. **Checkpoint** — a root together with the log size it covers. **Anchor** — the message carrying a checkpoint, written to a public ledger. **Inclusion proof** — the path from one fingerprint to a root. **Consistency proof** — the hashes showing that one root is contained unchanged in a later one. **Issuer** — the party that keeps the log, checkpoints it and anchors it.
 
 The key words MUST, MUST NOT, SHOULD and MAY are to be interpreted as in RFC 2119.
 
@@ -37,6 +37,14 @@ Two rules matter more than the rest:
 - **Content is hashed, not stored.** `requestHash` is the sha256 of `method + "\n" + url + "\n" + body`; `responseHash` the sha256 of the response body. An issuer MUST NOT require the content itself. This keeps what the agent bought private while still allowing a later dispute to be settled: re-hash the content, compare.
 
 An issuer MAY accept `amountAtomic` + `asset` instead of `amount` + `currency`, and MUST normalise them to human units before hashing. An issuer MUST treat a repeated `id` as the same record and MUST NOT create a duplicate.
+
+<h3 id="s4-1">4.1 Who paid, and which agent</h3>
+
+`network` is a [CAIP-2](https://chainagnostic.org/CAIPs/caip-2) chain identifier (`eip155:8453`, `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp`). Together with `payer` or `payee` it forms a [CAIP-10](https://chainagnostic.org/CAIPs/caip-10) account identifier, which is how a reader names the wallet outside this document.
+
+A wallet is not an agent. One wallet often funds several agents, and an agent may be rebuilt, renamed or moved between wallets while remaining the same thing to the finance team. A receipt MAY therefore carry `agent`: an [HCS-14](https://github.com/hiero-ledger/hiero-consensus-specifications/blob/main/docs/standards/hcs-14/index.md) universal agent identifier (`uaid:aid:…` for a deterministic identifier derived from the agent's own metadata, `uaid:did:…` for one that already holds a DID), or a plain DID. HCS-14 names agents the same way across registries and protocols, which is exactly what a ledger of agent spending needs; ARR-1 does not define an identifier of its own.
+
+`agent` is the one core field that is **omitted rather than set to `null`** when absent. This keeps the fingerprint of a record that names no agent identical to what it was before this field existed. When present it is part of the fingerprint, so the claim "this agent made this purchase" is covered by the anchor like everything else in the core.
 
 ## 5. Canonical form and fingerprint
 
@@ -62,44 +70,87 @@ has the fingerprint
 57829beafbd3352836d5c0cfa3cfce95c2501cf273b429da42c712a532a45112
 ```
 
-## 6. Batches and the root
+## 6. The log, the tree and the root
 
-Receipts are grouped into batches. A batch SHOULD cover one account and one day; an issuer MAY choose another period, and MUST state which.
+The receipts of one account form an **append-only log**. A receipt is given a position in that log when it is accepted, and that position never changes: records are added at the end, never inserted, reordered or removed. Everything below is a statement about the log, which is what lets a reader check that yesterday's evidence is still standing inside today's.
 
-The leaves are the fingerprints of the batch's receipts, as raw 32-byte values, in the batch's stated order. A parent is `sha256(left ‖ right)` over the concatenated bytes. A level with an odd number of nodes pairs the last node with itself. The root of an empty batch is `sha256("")`; an issuer SHOULD NOT anchor empty batches.
+The tree over the log is the Merkle Tree Hash of [RFC 9162 §2.1](https://www.rfc-editor.org/rfc/rfc9162#section-2.1) — the tree Certificate Transparency has used in production for a decade — over the receipt fingerprints as raw 32-byte values, in log order:
 
-Worked example — a two-receipt batch whose fingerprints are `57829beafbd3352836d5c0cfa3cfce95c2501cf273b429da42c712a532a45112` and `05fc3e26d3d4c3e2aa8fc823260a6e1c6956e160eeb3d32dccf48c554270b45b` has the root
+- the hash of an empty log is `sha256("")`;
+- the hash of a single fingerprint `d` is `sha256(0x00 ‖ d)`;
+- for `n > 1` leaves, let `k` be the largest power of two smaller than `n`; the hash is `sha256(0x01 ‖ MTH(leaves[0:k]) ‖ MTH(leaves[k:n]))`.
+
+The two prefix bytes are the point of the profile: a leaf is hashed behind `0x00` and an internal node behind `0x01`, so no value can be read as both, and no one can pass an internal node off as a receipt. The split at the largest power of two, rather than duplicating an odd node, means a tree of `n` leaves is a prefix of every larger tree — which is what makes consistency provable.
+
+A **checkpoint** is the tree head over *every* receipt in the log so far, together with its size. An issuer SHOULD publish a checkpoint once per account per day. A checkpoint MUST cover the whole log and not only the receipts added since the last one: covering only the new ones would make each root an island, and an issuer could quietly drop an older record without contradicting anything it had published. An issuer MAY state, alongside the checkpoint, how many receipts were added since the previous one and the time span they cover.
+
+Worked example — a log whose first two fingerprints are `57829beaf…45112` and `05fc3e26d…0b45b` (§5) has leaves
+
 ```
-150ad3ba12362b65432fe14c62d58ef27f3b3f1c67a6b69f691e168e87993b17
+leaf 0  37a27e6c179009a96fe9a37d72f25f9751e5469c19adda1ba3be4c45971650a4
+leaf 1  125030ad95878c7f7ef21da3a57a75d6012e0874a71127c47dae702f06d027b7
 ```
 
-Batching is what makes the cost of evidence independent of volume: one anchor covers one receipt or ten thousand.
+and, at size 2, the root
+
+```
+hex        e4995b4c82880c97512d1b0c13359add10c85d4fc29a2d9896a1819a792a8dea
+base64url  5JlbTIKIDJdRLRsMEzWa3RDIXU_Cmi2YlqGBmnkqjeo
+```
+
+The same log at size 1 had root `37a27e…50a4`, and `["125030ad95878c7f7ef21da3a57a75d6012e0874a71127c47dae702f06d027b7"]` is the RFC 9162 consistency proof between the two: the reader can check that the smaller tree is contained, unchanged, in the larger one.
+
+Anchoring the log rather than the day is what makes the cost of evidence independent of volume: one message covers one receipt or ten thousand, and it covers every receipt that came before.
+
+> **Records anchored before this profile.** Version 1.0 hashed leaves without prefixes and paired an odd node with itself. Roots published that way remain valid and remain verifiable; a proof over them is labelled `"merkle": "arr1-v1"` and a verifier MUST fold it with the 1.0 rule. New roots MUST use `"merkle": "rfc9162"`. Fingerprints (§5) are unchanged by this revision — only the tree above them.
 
 ## 7. The anchor record
 
-The message written to the ledger is defined by <a href="anchor.schema.json">`anchor.schema.json`</a> and MUST be submitted in the canonical form of §5. It carries the root, the size and the period — and nothing about what was bought, from whom, or for how much.
+A checkpoint is published to the ledger as an [HCS-27](https://github.com/hiero-ledger/hiero-consensus-specifications/blob/main/docs/standards/hcs-27/index.md) message. HCS-27 is the Hiero standard for publishing Merkle checkpoints of an append-only log to the Hedera Consensus Service; it fixes the envelope, the tree profile and the linkage between consecutive checkpoints, and explicitly leaves the schema of the log's entries to whoever is logging. ARR-1 is that schema. The two fit together without either inventing the other's half, so ARR-1 defines no anchoring mechanism of its own.
+
+The message MUST be submitted in the canonical form of §5 and MUST fit in one 1 KB ledger message. It carries the root, the size, the previous checkpoint and where the batch can be read — and nothing about what was bought, from whom, or for how much.
 
 ```
-{"app":"x402receipts","batch":"86a240c0-64d9-49f1-aea3-e4d32faf620b","count":2,"from":"2026-09-24T10:04:11.000Z","root":"150ad3ba12362b65432fe14c62d58ef27f3b3f1c67a6b69f691e168e87993b17","to":"2026-09-24T23:12:40.000Z","url":"https://app.x402receipts.com/batch/86a240c0-64d9-49f1-aea3-e4d32faf620b","v":1,"workspace":"27f6d763-804b-47cc-b429-f8502d3995ea"}
+{"metadata":{"arr":{"added":2,"batch":"86a240c0-64d9-49f1-aea3-e4d32faf620b","from":"2026-09-24T10:04:11.000Z","spec":"https://x402receipts.com/spec/arr-1","to":"2026-09-24T23:12:40.000Z","url":"https://app.x402receipts.com/batch/86a240c0-64d9-49f1-aea3-e4d32faf620b"},"log":{"alg":"sha-256","leaf":"sha256(jcs(receipt-core))","merkle":"rfc9162"},"prev":{"rootHashB64u":"N6J-bBeQCalv6aN9cvJfl1HlRpwZrdobo75MRZcWUKQ","treeSize":"1"},"root":{"rootHashB64u":"5JlbTIKIDJdRLRsMEzWa3RDIXU_Cmi2YlqGBmnkqjeo","treeSize":"2"},"stream":{"log_id":"27f6d763-804b-47cc-b429-f8502d3995ea","registry":"x402receipts"},"type":"arr-1-checkpoint-v1"},"op":"register","p":"hcs-27"}
 ```
 
-The ledger MUST be public, append-only, and MUST timestamp entries independently of the issuer. The reference implementation uses the [Hedera Consensus Service](https://hedera.com/consensus-service), where a write costs USD 0.0008 at a price fixed in dollars; any ledger with equivalent properties conforms. An issuer SHOULD anchor within 24 hours of a receipt being accepted and MUST publish the ledger coordinates (network, topic or equivalent) so that anchors can be read without the issuer's cooperation.
+- `p` / `op` — the HCS-27 envelope.
+- `metadata.type` — what kind of record this is, in the issuer's own namespace: `arr-1-checkpoint-v1`.
+- `metadata.stream` — which log this is: the registry that keeps it and the opaque account identifier.
+- `metadata.log` — how a leaf is produced: sha256 of the canonicalised receipt core (§5), folded with the RFC 9162 tree (§6).
+- `metadata.root` — the tree head: size, and root as base64url of the 32 raw bytes.
+- `metadata.prev` — the previous checkpoint of the same log, same shape. Absent on the first one. This is the chain a reader walks to check nothing was dropped between two days.
+- `metadata.arr` — the ARR-1 part: which receipts were added, over what span, and the page where they can be read.
+
+The example above is 661 bytes. An issuer whose identifiers or URLs would push the message past 1 KB MUST shorten them rather than drop `prev` or `root`.
+
+A period statement (§10.1) is published in the same envelope shape under its own protocol tag, since it is a document fingerprint rather than a tree head:
+
+```
+{"metadata":{"final":false,"period":"2026-09","receipts":59,"spec":"https://x402receipts.com/spec/arr-1","statement":"35a53c63e4cbb447256f7961479b273744d29260d7ae93fea6f39532b4496256","stream":{"log_id":"9254677d-3973-4d60-b510-475c3a4cc0b9","registry":"x402receipts"},"type":"arr-1-statement-v1","unmatched":1,"url":"https://app.x402receipts.com/statement/9254677d-3973-4d60-b510-475c3a4cc0b9/2026-09"},"op":"statement","p":"arr-1"}
+```
+
+The ledger MUST be public, append-only, and MUST timestamp entries independently of the issuer. The reference implementation uses the [Hedera Consensus Service](https://hedera.com/consensus-service), where a write costs USD 0.0008 at a price fixed in dollars; any ledger with equivalent properties conforms, and an issuer anchoring elsewhere SHOULD keep the same message body. An issuer SHOULD anchor within 24 hours of a receipt being accepted and MUST publish the ledger coordinates (network, topic or equivalent) so that anchors can be read without the issuer's cooperation.
 
 ## 8. The proof
 
-A proof bundle (<a href="proof.schema.json">`proof.schema.json`</a>) carries the receipt core, its fingerprint, the path to the root and the ledger coordinates. A path entry is `{ "hash", "position" }`, where `position` says whether the sibling goes on the left or the right when the pair is hashed.
+A proof bundle (<a href="proof.schema.json">`proof.schema.json`</a>) carries the receipt core, its fingerprint, the path from that fingerprint to a published root, and the ledger coordinates of the message carrying that root. A path entry is `{ "hash", "position" }`, where `position` says whether the sibling goes on the left or the right when the pair is hashed. The bundle MUST name the tree profile in `proof.merkle` (`"rfc9162"` or `"arr1-v1"`) and SHOULD carry `leafIndex` and `treeSize`, which are what let a reader reproduce the path independently.
 
 An issuer MUST make a proof available for every anchored receipt, to anyone holding the receipt identifier, without authentication. Receipt identifiers are unguessable; the link is the access.
+
+An issuer SHOULD also serve a **consistency proof** between any two published tree sizes of the same log, as the list of hashes defined in RFC 9162 §2.1.4. An inclusion proof shows a receipt is in one tree; a consistency proof shows that tree was never rewritten afterwards. A register that offers only the first can still quietly drop a record between two days.
 
 ## 9. Verification
 
 Given a proof bundle, a verifier MUST:
 
-- rebuild the core from the bundle, canonicalise it (§5) and compute its sha256; it MUST equal the stated fingerprint;
-- fold the fingerprint up the path — for each entry, `acc = sha256(sibling ‖ acc)` when the sibling is on the left, `sha256(acc ‖ sibling)` when on the right — and the result MUST equal the stated root;
-- read the anchor record from the ledger directly, at the stated coordinates, and check that its `root` equals the root, and that its consensus timestamp is not later than the moment the verifier first saw the record.
+1. rebuild the core from the bundle, canonicalise it (§5) and compute its sha256; it MUST equal the stated fingerprint;
+2. compute the leaf, `sha256(0x00 ‖ fingerprint)`, and fold it up the path — for each entry, `acc = sha256(0x01 ‖ sibling ‖ acc)` when the sibling is on the left, `sha256(0x01 ‖ acc ‖ sibling)` when on the right — and the result MUST equal the stated root. Where the bundle says `"merkle": "arr1-v1"`, the 1.0 rule applies instead: no prefixes, `acc = sha256(sibling ‖ acc)` or `sha256(acc ‖ sibling)`;
+3. read the anchor record from the ledger directly, at the stated coordinates, and check that the root it carries — `metadata.root.rootHashB64u`, base64url of the same 32 bytes — equals the root, and that its consensus timestamp is not later than the moment the verifier first saw the record.
 
 Step 3 MUST NOT be performed through the issuer. A verification that reads the ledger through the issuer's API proves nothing that the issuer could not fabricate.
+
+A verifier that is checking a register over time SHOULD also walk `metadata.prev` from the newest checkpoint backwards and verify each consistency proof, which establishes that every earlier root is still contained in the current one. This is the check that catches deletion, and it is the reason §6 anchors the whole log rather than the day.
 
 All three checks passing establish that this receipt existed, in exactly this form, at the anchor's consensus time. They establish nothing about whether the goods were worth the money, and nothing about receipts that were never submitted — which is what §10 is for.
 
@@ -117,11 +168,7 @@ An issuer SHOULD read from at least two independent sources (for example an inde
 
 An issuer claiming Level 3 SHOULD publish the claim as a document. A **period statement** (<a href="/spec/arr-1/statement.schema.json">`statement.schema.json`</a>) covers one account and one period and carries: the period and whether it is `final` (the period had ended when it was produced); totals spent; how many receipts, delivered, anchored and supplier-signed; **per wallet**, how many payments were seen on-chain, how many matched, and the unmatched ones with their settlement references; every batch of the period with its root and ledger coordinates; and the data sources consulted.
 
-The statement is canonicalised and hashed as in §5, and the hash is anchored as a record of type `statement`:
-
-```
-{"app":"x402receipts","final":false,"period":"2026-09","receipts":59,"statement":"35a53c63e4cbb447256f7961479b273744d29260d7ae93fea6f39532b4496256","type":"statement","unmatched":1,"url":"https://app.x402receipts.com/statement/9254677d-3973-4d60-b510-475c3a4cc0b9/2026-09","v":1,"workspace":"9254677d-3973-4d60-b510-475c3a4cc0b9"}
-```
+The statement is canonicalised and hashed as in §5, and the hash is anchored as a record of type `arr-1-statement-v1` (§7).
 
 A `final` statement MUST NOT be replaced: a correction is a new statement for a later period, not a rewrite of a closed one. An interim statement (produced before the period ended) MAY be superseded. Verification is §9 applied to the document: canonicalise, hash, compare with the anchored fingerprint, read that fingerprint from the ledger directly. A live example: [a September statement](https://app.x402receipts.com/statement/9254677d-3973-4d60-b510-475c3a4cc0b9/2026-09) and [its anchor](https://hashscan.io/mainnet/transaction/1790594552.120220104).
 
@@ -139,7 +186,9 @@ A supplier signature is what turns "our system says we bought this" into "the su
 - **Level 2 — Anchored.** Level 1, plus batches anchored as in §6–7 and proofs available to third parties as in §8.
 - **Level 3 — Reconciled.** Level 2, plus completeness as in §10: on-chain reconciliation per wallet and period, with unmatched payments stated.
 
-An implementation MUST state the level it claims and the ledger it anchors to. The reference implementation operates at Level 3.
+An implementation MUST state the level it claims and the ledger it anchors to, and MUST name the tree profile of every root it publishes. Anchoring on the Hedera Consensus Service, a Level 2 implementation MUST publish checkpoints as HCS-27 messages (§7).
+
+An implementation MUST NOT claim a level it cannot demonstrate on request: for Level 2, a proof bundle and a ledger message a stranger can read; for Level 3, a period statement naming its on-chain sources. The reference implementation operates at Level 3.
 
 ## 13. Reference implementation
 
@@ -155,8 +204,10 @@ Anchors are written to Hedera mainnet, topic `0.0.10889260`, readable by anyone 
 
 ## 14. Status, licence and versioning
 
-Version 1.0, published 28 September 2026. This is a draft: the schemas and the algorithms in §§5–9 are stable and the reference implementation follows them, but the text may still be clarified.
+Version 1.1, published 29 September 2026 (1.0: 28 September 2026). This is a draft: the schemas and the algorithms in §§5–9 are stable and the reference implementation follows them, but the text may still be clarified.
+
+**What changed in 1.1.** The tree of §6 became the RFC 9162 profile and the anchor record of §7 became an HCS-27 message, so that ARR-1 uses an existing anchoring standard instead of a parallel one; checkpoints now cover the whole log, which makes consistency provable. Receipt fingerprints are unchanged, and roots published under 1.0 stay verifiable under the `arr1-v1` label. §4.1 adopts CAIP-2/CAIP-10 for accounts and HCS-14 for the optional agent identifier.
 
 The specification and its schemas are released into the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Implement it, fork it, embed it in another standard; no permission and no attribution required.
 
-A change that alters a fingerprint, a root or an anchor record for the same inputs requires a new version number, carried in the `v` field. Comments and corrections: [hello@x402receipts.com](mailto:hello@x402receipts.com) or an issue on the repository.
+A change that alters a fingerprint requires a new record version, carried in the `v` field of the core. A change that alters a root or an anchor record requires a new label in `merkle` and in the anchor's `metadata.log`, so that records published under the older rule stay verifiable rather than becoming unreadable. Comments and corrections: [hello@x402receipts.com](mailto:hello@x402receipts.com) or an issue on the repository.

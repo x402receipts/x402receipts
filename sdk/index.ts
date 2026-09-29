@@ -41,6 +41,12 @@ export interface RegisterOptions {
   onError?: (err: unknown) => void;
   /** Override for tests / unusual runtimes. */
   fetchForUpload?: typeof fetch;
+  /**
+   * Which agent this is, as an HCS-14 universal agent identifier (`uaid:aid:…` / `uaid:did:…`)
+   * or a plain DID. Recorded on every receipt, so a wallet shared by several agents still
+   * produces a register that says which one spent the money.
+   */
+  agent?: string;
 }
 
 export interface ReceiptPayload {
@@ -58,6 +64,8 @@ export interface ReceiptPayload {
   responseHash?: string | null;
   responseStatus?: number | null;
   delivered: boolean;
+  /** HCS-14 universal agent identifier or DID, when the caller sets one. */
+  agent?: string;
   /** The seller's own signed receipt (x402 offer-receipt extension), when the seller issues one. */
   sellerReceipt?: unknown;
 }
@@ -151,6 +159,7 @@ export function withRegister(fetchImpl: typeof fetch, opts: RegisterOptions = {}
 
       enqueue({
         id: uuid(),
+        ...(opts.agent ? { agent: opts.agent } : {}),
         occurredAt: startedAt,
         network: settlement?.network ?? challenge?.network ?? "unknown",
         payer: settlement?.payer ?? payerFromPayment(paymentHeaders) ?? null,

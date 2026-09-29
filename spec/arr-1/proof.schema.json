@@ -29,7 +29,8 @@
       ],
       "required": [
         "path",
-        "root"
+        "root",
+        "merkle"
       ],
       "properties": {
         "root": {
@@ -57,7 +58,25 @@
                 "description": "Where the sibling goes when the pair is hashed."
               }
             }
-          }
+          },
+          "description": "Sibling hashes from the leaf up to the root, nearest first."
+        },
+        "merkle": {
+          "enum": [
+            "rfc9162",
+            "arr1-v1"
+          ],
+          "description": "Which tree rule folds this path. rfc9162: leaf = sha256(0x00 ‖ fingerprint), node = sha256(0x01 ‖ left ‖ right). arr1-v1: the ARR-1 1.0 rule, no prefixes, odd node paired with itself."
+        },
+        "leafIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Position of this receipt in the account's log (rfc9162) or in the batch (arr1-v1)."
+        },
+        "treeSize": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How many leaves the tree whose root is stated held."
         }
       }
     },
@@ -89,6 +108,10 @@
         "explorer": {
           "type": "string",
           "format": "uri"
+        },
+        "root": {
+          "type": "string",
+          "description": "Where in the ledger message the root is found: metadata.root.rootHashB64u for HCS-27 checkpoints, root for ARR-1 1.0 records."
         }
       }
     },
@@ -99,6 +122,37 @@
       "type": "string",
       "format": "uri",
       "description": "https://x402receipts.com/spec/arr-1"
+    },
+    "consistency": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Optional. Proof that an earlier published root is contained unchanged in this one (RFC 9162 §2.1.4).",
+      "required": [
+        "from",
+        "to",
+        "hashes"
+      ],
+      "properties": {
+        "from": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The earlier tree size."
+        },
+        "to": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The later tree size, the one whose root is stated."
+        },
+        "hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
     }
   }
 }

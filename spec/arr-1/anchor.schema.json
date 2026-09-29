@@ -2,106 +2,126 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://x402receipts.com/spec/arr-1/anchor.schema.json",
   "title": "ARR-1 anchor record",
-  "description": "A message written to the public ledger. Two record types: a batch anchor (a Merkle root over receipt fingerprints) and a statement anchor (the fingerprint of a period statement). Submitted in canonical form.",
+  "description": "A message written to the public ledger, in the canonical form of ARR-1 §5. Two record types: a checkpoint of an account's receipt log, published as an HCS-27 message, and a period statement fingerprint, published in the same envelope under the arr-1 protocol tag. Records written under ARR-1 1.0 used a flat v/app/workspace form, kept here as legacy and still valid.",
   "type": "object",
-  "required": [
-    "v",
-    "app",
-    "workspace"
-  ],
-  "additionalProperties": true,
-  "properties": {
-    "v": {
-      "const": 1
-    },
-    "app": {
-      "type": "string",
-      "description": "Identifier of the issuer, e.g. x402receipts."
-    },
-    "workspace": {
-      "type": "string",
-      "description": "Opaque account identifier."
-    },
-    "batch": {
-      "type": "string",
-      "description": "Opaque batch identifier."
-    },
-    "root": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$",
-      "description": "Merkle root of the batch's receipt fingerprints."
-    },
-    "count": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "How many receipts are in the batch."
-    },
-    "from": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "to": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "url": {
-      "type": "string",
-      "format": "uri",
-      "description": "Optional page where the batch can be inspected."
-    },
-    "type": {
-      "enum": [
-        "batch",
-        "statement"
-      ],
-      "description": "Absent means batch, for compatibility with records written before this field existed."
-    },
-    "period": {
-      "type": "string",
-      "pattern": "^[0-9]{4}-[0-9]{2}$",
-      "description": "Statement anchors only."
-    },
-    "statement": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$",
-      "description": "Statement anchors only: sha256 of the canonical period statement."
-    },
-    "receipts": {
-      "type": "integer",
-      "description": "Statement anchors only."
-    },
-    "unmatched": {
-      "type": "integer",
-      "description": "Statement anchors only: payments with no receipt in the period."
-    },
-    "final": {
-      "type": "boolean",
-      "description": "Statement anchors only."
-    }
-  },
   "oneOf": [
-    {
-      "title": "batch anchor",
-      "required": [
-        "batch",
-        "root",
-        "count",
-        "from",
-        "to"
-      ]
-    },
-    {
-      "title": "statement anchor",
-      "required": [
-        "type",
-        "period",
-        "statement"
-      ],
+    { "$ref": "#/$defs/checkpoint" },
+    { "$ref": "#/$defs/statement" },
+    { "$ref": "#/$defs/legacy" }
+  ],
+  "$defs": {
+    "treeHead": {
+      "type": "object",
+      "required": ["treeSize", "rootHashB64u"],
       "properties": {
-        "type": {
-          "const": "statement"
+        "treeSize": {
+          "type": "string",
+          "pattern": "^[0-9]+$",
+          "description": "How many receipts the log held. A string, so that very large logs survive JSON parsers that lose integer precision."
+        },
+        "rootHashB64u": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{43}$",
+          "description": "The RFC 9162 root, base64url of 32 raw bytes, unpadded."
         }
       }
+    },
+    "stream": {
+      "type": "object",
+      "required": ["registry", "log_id"],
+      "properties": {
+        "registry": { "type": "string", "description": "Who keeps the log." },
+        "log_id": { "type": "string", "description": "Opaque identifier of the account whose log this is." }
+      }
+    },
+    "checkpoint": {
+      "title": "checkpoint (HCS-27)",
+      "type": "object",
+      "required": ["p", "op", "metadata"],
+      "properties": {
+        "p": { "const": "hcs-27" },
+        "op": { "const": "register" },
+        "m": { "type": "string", "description": "Optional memo, as allowed by HCS-27." },
+        "metadata": {
+          "type": "object",
+          "required": ["type", "stream", "log", "root"],
+          "properties": {
+            "type": { "const": "arr-1-checkpoint-v1" },
+            "stream": { "$ref": "#/$defs/stream" },
+            "log": {
+              "type": "object",
+              "required": ["alg", "leaf", "merkle"],
+              "properties": {
+                "alg": { "const": "sha-256" },
+                "leaf": { "const": "sha256(jcs(receipt-core))", "description": "How a leaf is produced from a receipt: ARR-1 §5." },
+                "merkle": { "const": "rfc9162", "description": "The tree profile: ARR-1 §6." }
+              }
+            },
+            "root": { "$ref": "#/$defs/treeHead" },
+            "prev": { "$ref": "#/$defs/treeHead", "description": "The previous checkpoint of the same log. Absent on the first." },
+            "arr": {
+              "type": "object",
+              "description": "The ARR-1 part: which receipts this checkpoint added.",
+              "properties": {
+                "spec": { "type": "string", "format": "uri" },
+                "batch": { "type": "string", "description": "Opaque identifier of the receipts added since the previous checkpoint." },
+                "added": { "type": "integer", "minimum": 1 },
+                "from": { "type": "string", "format": "date-time" },
+                "to": { "type": "string", "format": "date-time" },
+                "url": { "type": "string", "format": "uri", "description": "Page where those receipts can be inspected." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "statement": {
+      "title": "period statement anchor",
+      "type": "object",
+      "required": ["p", "op", "metadata"],
+      "properties": {
+        "p": { "const": "arr-1" },
+        "op": { "const": "statement" },
+        "metadata": {
+          "type": "object",
+          "required": ["type", "stream", "period", "statement"],
+          "properties": {
+            "type": { "const": "arr-1-statement-v1" },
+            "spec": { "type": "string", "format": "uri" },
+            "stream": { "$ref": "#/$defs/stream" },
+            "period": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}$" },
+            "statement": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "sha256 of the canonical period statement." },
+            "receipts": { "type": "integer", "minimum": 0 },
+            "unmatched": { "type": "integer", "minimum": 0, "description": "Payments seen on-chain with no receipt in the period." },
+            "final": { "type": "boolean", "description": "True when the period had ended. A final statement is never replaced." },
+            "url": { "type": "string", "format": "uri" }
+          }
+        }
+      }
+    },
+    "legacy": {
+      "title": "ARR-1 1.0 record (legacy)",
+      "description": "The flat form used before checkpoints moved to HCS-27. Roots published this way use the arr1-v1 tree profile and stay verifiable.",
+      "type": "object",
+      "required": ["v", "app", "workspace"],
+      "additionalProperties": true,
+      "properties": {
+        "v": { "const": 1 },
+        "app": { "type": "string" },
+        "workspace": { "type": "string" },
+        "batch": { "type": "string" },
+        "root": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "count": { "type": "integer", "minimum": 1 },
+        "from": { "type": "string", "format": "date-time" },
+        "to": { "type": "string", "format": "date-time" },
+        "url": { "type": "string", "format": "uri" },
+        "type": { "enum": ["batch", "statement"] },
+        "period": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}$" },
+        "statement": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "receipts": { "type": "integer" },
+        "unmatched": { "type": "integer" },
+        "final": { "type": "boolean" }
+      }
     }
-  ]
+  }
 }

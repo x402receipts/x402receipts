@@ -21,6 +21,16 @@
       "maxLength": 128,
       "description": "Unique id for this purchase, chosen by the agent. A UUID is recommended. Submitting the same id twice MUST NOT create a second record."
     },
+    "agent": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 5,
+      "maxLength": 512,
+      "pattern": "^(uaid:(aid|did):|did:)",
+      "description": "Optional HCS-14 universal agent identifier (uaid:…) or DID naming the agent behind the wallet. When present it becomes part of the fingerprint."
+    },
     "occurredAt": {
       "type": "string",
       "format": "date-time",

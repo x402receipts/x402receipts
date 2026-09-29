@@ -26,7 +26,9 @@ const pay = wrapFetchWithPayment(register, wallet);
 
 ## The format is an open standard
 
-The record, its fingerprint, the Merkle batching, the anchor record and the verification algorithm are published as **[ARR-1 — Agent Receipt Record](spec/arr-1/ARR-1.md)**, released into the public domain (CC0). JSON Schemas are in [`spec/arr-1/`](spec/arr-1). Implement it yourself, or check our implementation against it.
+The record, its fingerprint, the append-only log above it, the anchor record and the verification algorithm are published as **[ARR-1 — Agent Receipt Record](spec/arr-1/ARR-1.md)**, released into the public domain (CC0). JSON Schemas are in [`spec/arr-1/`](spec/arr-1). Implement it yourself, or check our implementation against it.
+
+ARR-1 builds on existing standards rather than replacing them: the tree is the RFC 9162 profile used by Certificate Transparency, checkpoints are published as [HCS-27](https://github.com/hiero-ledger/hiero-consensus-specifications/blob/main/docs/standards/hcs-27/index.md) messages, accounts are named with CAIP-2/CAIP-10, and agents with [HCS-14](https://github.com/hiero-ledger/hiero-consensus-specifications/blob/main/docs/standards/hcs-14/index.md) identifiers.
 
 ## In this repo
 
@@ -43,7 +45,7 @@ The record, its fingerprint, the Merkle batching, the anchor record and the veri
 
 1. **Capture** — the SDK records each paid call: resource, amount, counterparty, transaction reference, request/response fingerprints, delivery status, and the seller's signed receipt when it issues one (x402 `offer-receipt`).
 2. **Reconcile** — the connected wallets are read on Base and Solana; every outgoing USDC payment is matched to a receipt. What doesn't match is an exception, not an average.
-3. **Prove** — each night, each account's receipts form a group; the group's Merkle root is written to the Hedera Consensus Service with a link to the group page. Every receipt has a public verification page that redoes the maths in the browser.
+3. **Prove** — each night, the account's whole receipt log is hashed into one RFC 9162 Merkle tree and its root is written to the Hedera Consensus Service, linked to the previous day's root. Every receipt has a public verification page that redoes the maths in the browser.
 4. **Report** — the owner signs in with the wallet: spend by supplier, the register, CSV and signed JSON export.
 
 Guide: https://x402receipts.com/guide.html · Status: https://app.x402receipts.com/status · Contact: hello@x402receipts.com
