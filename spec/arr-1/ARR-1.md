@@ -170,7 +170,7 @@ An issuer claiming Level 3 SHOULD publish the claim as a document. A **period st
 
 The statement is canonicalised and hashed as in §5, and the hash is anchored as a record of type `arr-1-statement-v1` (§7).
 
-A `final` statement MUST NOT be replaced: a correction is a new statement for a later period, not a rewrite of a closed one. An interim statement (produced before the period ended) MAY be superseded. Verification is §9 applied to the document: canonicalise, hash, compare with the anchored fingerprint, read that fingerprint from the ledger directly. A live example: [a September statement](https://app.x402receipts.com/statement/9254677d-3973-4d60-b510-475c3a4cc0b9/2026-09) and [its anchor](https://hashscan.io/mainnet/transaction/1790594552.120220104).
+A `final` statement MUST NOT be replaced: a correction is a new statement for a later period, not a rewrite of a closed one. An interim statement (produced before the period ended) MAY be superseded. Verification is §9 applied to the document: canonicalise, hash, compare with the anchored fingerprint, read that fingerprint from the ledger directly. A live example: [a September statement](https://app.x402receipts.com/statement/27f6d763-804b-47cc-b429-f8502d3995ea/2026-09) and [its anchor](https://hashscan.io/mainnet/transaction/1790702870.067526911).
 
 The distinction between *funding* and *expense* belongs here. A transfer into an agent's wallet is funding; it is not a purchase and MUST NOT be recorded as one. The expenses are the outgoing payments to suppliers.
 
