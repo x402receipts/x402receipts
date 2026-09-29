@@ -197,10 +197,11 @@ An implementation MUST NOT claim a level it cannot demonstrate on request: for L
 - Submit receipts: `POST https://app.x402receipts.com/api/v1/receipts` (paid over x402)
 - Proof bundle for one receipt, public: `GET https://app.x402receipts.com/api/v1/receipts/{id}/verify`
 - Human verification page, which redoes §9 in the reader's browser: `https://app.x402receipts.com/verify/{id}`
+- Consistency proof between two published roots, public: `GET https://app.x402receipts.com/api/v1/log/{log}/consistency?from={n}&to={m}` (no parameters lists the published checkpoints)
 - Batch page named in every anchor record: `https://app.x402receipts.com/batch/{id}`
 - Client library: `npm i x402receipts-sdk` · MCP server: `npx -y x402receipts-mcp`
 
-Anchors are written to Hedera mainnet, topic `0.0.10889260`, readable by anyone through any Hedera mirror node.
+Anchors are written to Hedera mainnet, topic `0.0.10889260`, readable by anyone through any Hedera mirror node. A worked pair: checkpoints of [tree size 19](https://hashscan.io/mainnet/transaction/1790702115.580439104) and [tree size 20](https://hashscan.io/mainnet/transaction/1790702561.744052767), the second carrying the first as `prev`, with the [consistency proof between them](https://app.x402receipts.com/api/v1/log/27f6d763-804b-47cc-b429-f8502d3995ea/consistency?from=19&to=20).
 
 ## 14. Status, licence and versioning
 
