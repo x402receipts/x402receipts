@@ -12,8 +12,9 @@
  * still records what was bought and whether it arrived; the amount is then filled in
  * later by reconciliation against the chain.
  *
- * Uploads are paid per receipt over x402 from the agent's own wallet — give the SDK the
- * paying fetch and it settles its own uploads (an apiKey only chooses the workspace):
+ * Uploads are paid over x402 from the agent's own wallet: USD 0.01 the first time it records
+ * on a given day, free for the rest of that day. Give the SDK the paying fetch and it settles
+ * its own uploads (an apiKey only chooses the workspace):
  *
  *   const register = withRegister(fetch, { payWith: () => fetchWithPayment });
  *   const fetchWithPayment = wrapFetchWithPayment(register, wallet);
@@ -82,7 +83,7 @@ export function withRegister(fetchImpl: typeof fetch, opts: RegisterOptions = {}
   const onError = opts.onError ?? (() => {});
 
   const queue: ReceiptPayload[] = [];
-  let pass: string | null = null; // the month's pass, issued after the first paid upload; free uploads until the month ends
+  let pass: string | null = null; // the day's pass, issued by the first paid upload; free uploads until the day ends, then the next one pays again
   const challenges = new Map<string, Challenge>();
   let timer: ReturnType<typeof setTimeout> | null = null;
   let flushing = false;

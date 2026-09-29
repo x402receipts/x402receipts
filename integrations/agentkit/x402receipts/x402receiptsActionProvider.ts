@@ -18,7 +18,7 @@ export interface X402ReceiptsConfig {
 /**
  * X402ReceiptsActionProvider lets an agent keep an accounting-grade record of its own x402
  * spending: every purchase is recorded on x402receipts as a receipt, reconciled there against
- * the on-chain payment and anchored with verifiable evidence. Recording costs USD 1 per wallet per
+ * the on-chain payment and anchored with verifiable evidence. Recording costs USD 0.01 per wallet for each day it records, at most USD 0.31 per
  * calendar month, paid by the agent's wallet over x402; the paying wallet becomes the account.
  */
 export class X402ReceiptsActionProvider extends ActionProvider<WalletProvider> {
@@ -42,7 +42,7 @@ export class X402ReceiptsActionProvider extends ActionProvider<WalletProvider> {
   @CreateAction({
     name: "get_x402receipts_info",
     description:
-      "Describe x402receipts (accounting and reconciliation for autonomous x402 spending): the recording endpoint, its price (USD 1 per wallet per calendar month in USDC on Base or Solana, unlimited receipts) and where the docs are. Pays nothing.",
+      "Describe x402receipts (accounting and reconciliation for autonomous x402 spending): the recording endpoint, its price (USD 0.01 per wallet for each day it records, in USDC on Base or Solana, unlimited receipts, at most USD 0.31 a month) and where the docs are. Pays nothing.",
     schema: EmptySchema,
   })
   async getInfo(): Promise<string> {
@@ -64,7 +64,7 @@ export class X402ReceiptsActionProvider extends ActionProvider<WalletProvider> {
   }
 
   /**
-   * Records purchases as receipts; the wallet's first upload of the month pays USD 1 over x402, later ones are free.
+   * Records purchases as receipts; the wallet's first upload of a day pays USD 0.01 over x402, later ones that day are free.
    *
    * @param walletProvider - The wallet that pays for the recording
    * @param args - The receipts to record
@@ -73,7 +73,7 @@ export class X402ReceiptsActionProvider extends ActionProvider<WalletProvider> {
   @CreateAction({
     name: "record_x402_receipts",
     description:
-      "Record one or more x402 purchases this agent made as receipts on x402receipts, so they are reconciled against the on-chain payments and available to finance as an auditable statement. Costs USD 1 per wallet per calendar month, paid by this wallet over x402 with the first upload of the month; later uploads are free. Call it after paid requests, with the resource, amount, payee, transaction reference and delivery status of each purchase.",
+      "Record one or more x402 purchases this agent made as receipts on x402receipts, so they are reconciled against the on-chain payments and available to finance as an auditable statement. Costs USD 0.01 per wallet for each day it records, paid by this wallet over x402 with the first upload of that day; later uploads that day are free. Call it after paid requests, with the resource, amount, payee, transaction reference and delivery status of each purchase.",
     schema: RecordReceiptsSchema,
   })
   async recordReceipts(walletProvider: WalletProvider, args: z.infer<typeof RecordReceiptsSchema>): Promise<string> {

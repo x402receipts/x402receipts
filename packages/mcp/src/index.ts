@@ -2,7 +2,7 @@
 /**
  * x402receipts MCP server — three tools an agent (or the person running it) can call:
  *   x402receipts_service_info      price, networks, docs; nothing is paid
- *   x402receipts_record_receipts   record purchases as receipts; USD 1 per wallet per calendar month over x402 from a configured wallet, then free
+ *   x402receipts_record_receipts   record purchases as receipts; USD 0.01 per wallet for each day it records, over x402 from a configured wallet, then free that day
  *   x402receipts_verify_receipt    public verification material for one receipt (hash, Merkle path, ledger entry)
  *
  * Wallet for paying (optional; without it record_receipts explains what's needed):
@@ -89,7 +89,7 @@ const server = new McpServer({ name: "x402receipts", version: "1.0.0" });
 
 server.registerTool("x402receipts_service_info", {
   title: "x402receipts: service info",
-  description: "What x402receipts is (accounting and reconciliation for autonomous x402 spending), what it costs (USD 1 per wallet per calendar month, paid by the agent's wallet in USDC on Base or Solana; unlimited receipts) and where the docs are. Pays nothing.",
+  description: "What x402receipts is (accounting and reconciliation for autonomous x402 spending), what it costs (USD 0.01 per wallet for each day it records, paid by the agent's wallet in USDC on Base or Solana; unlimited receipts, at most USD 0.31 a month) and where the docs are. Pays nothing.",
   inputSchema: {},
 }, async () => {
   const c = await challenge();
@@ -100,7 +100,7 @@ server.registerTool("x402receipts_service_info", {
 
 server.registerTool("x402receipts_record_receipts", {
   title: "x402receipts: record receipts",
-  description: "Record 1–500 x402 purchases as receipts. Costs USD 1 per wallet per calendar month over x402 (first upload of the month pays; the rest are free), from the wallet configured in X402RECEIPTS_EVM_PRIVATE_KEY (Base) or X402RECEIPTS_SOLANA_PRIVATE_KEY (Solana). Returns the settlement and the workspace the receipts were filed under.",
+  description: "Record 1–500 x402 purchases as receipts. Costs USD 0.01 per wallet for each day it records, over x402 (the first upload of a day pays; the rest of that day is free), from the wallet configured in X402RECEIPTS_EVM_PRIVATE_KEY (Base) or X402RECEIPTS_SOLANA_PRIVATE_KEY (Solana). Returns the settlement and the workspace the receipts were filed under.",
   inputSchema: { receipts: z.array(z.object(receiptShape)).min(1).max(500), payWith: z.enum(["base", "solana"]).optional().describe("Which configured wallet pays; default: the first configured") },
 }, async ({ receipts, payWith }) => {
   const p = await payingFetch();

@@ -5,7 +5,7 @@ An MCP server that gives any agent (Claude Desktop, Claude Code, Cursor, or your
 | Tool | What it does | Pays |
 |---|---|---|
 | `x402receipts_service_info` | Price, networks, docs | nothing |
-| `x402receipts_record_receipts` | Record 1–500 x402 purchases as receipts | USD 1 per wallet per month, from the configured wallet; free for the rest of the month |
+| `x402receipts_record_receipts` | Record 1–500 x402 purchases as receipts | USD 0.01 per wallet for each day it records, from the configured wallet; free for the rest of that day |
 | `x402receipts_verify_receipt` | Public verification material for a receipt (hash, Merkle path, Hedera ledger entry) | nothing |
 
 ## Run

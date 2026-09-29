@@ -4,7 +4,7 @@
 
 - Website: https://x402receipts.com · App: https://app.x402receipts.com · Live statement: https://app.x402receipts.com/demo
 - Docs for agents: https://app.x402receipts.com/llms.txt · OpenAPI: https://app.x402receipts.com/openapi.json
-- Price: **USD 1 per agent wallet per calendar month**, paid over x402 in USDC (Base, Solana) by the agent's own wallet. Unlimited receipts. No API key.
+- Price: **USD 0.01 per agent wallet for each day it records purchases**, paid over x402 in USDC (Base, Solana) by the agent's own wallet. A quiet day costs nothing, so a month never exceeds USD 0.31. Unlimited receipts. No API key.
 
 ## Use it
 

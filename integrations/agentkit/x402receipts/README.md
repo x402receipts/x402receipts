@@ -5,7 +5,7 @@ Gives an AgentKit agent an accounting-grade record of its own x402 spending. Eve
 ## Actions
 
 - `get_x402receipts_info` — endpoint, price and payment options. Pays nothing.
-- `record_x402_receipts` — record 1–500 purchases as receipts. USD 1 per wallet per calendar month, paid by the agent's wallet over x402 (USDC on Base or Solana); unlimited receipts. The paying wallet becomes the account; its owner signs in with the same wallet.
+- `record_x402_receipts` — record 1–500 purchases as receipts. USD 0.01 per wallet for each day it records, paid by the agent's wallet over x402 (USDC on Base or Solana); unlimited receipts, at most USD 0.31 a month. The paying wallet becomes the account; its owner signs in with the same wallet.
 - `verify_x402_receipt` — public verification material for one receipt (hash, Merkle path, Hedera ledger entry). Pays nothing.
 
 ## Usage

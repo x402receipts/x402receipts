@@ -20,7 +20,7 @@
       "environmentVariables": [
         {
           "name": "X402RECEIPTS_EVM_PRIVATE_KEY",
-          "description": "Optional. 0x\u2026 key holding USDC on Base; pays USD 1 per wallet per calendar month; later uploads that month are free.",
+          "description": "Optional. 0x\u2026 key holding USDC on Base; pays USD 0.01 per wallet for each day it records; later uploads that day are free.",
           "isRequired": false,
           "isSecret": true
         },

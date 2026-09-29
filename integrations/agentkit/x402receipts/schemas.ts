@@ -22,7 +22,7 @@ export const ReceiptSchema = z.object({
 
 export const RecordReceiptsSchema = z
   .object({ receipts: z.array(ReceiptSchema).min(1).max(500).describe("The purchases to record") })
-  .describe("Record x402 purchases as receipts on x402receipts (USD 1 per wallet per month, paid by this wallet over x402)");
+  .describe("Record x402 purchases as receipts on x402receipts (USD 0.01 per wallet for each day it records, paid by this wallet over x402)");
 
 export const VerifyReceiptSchema = z
   .object({ id: z.string().describe("The receipt id") })

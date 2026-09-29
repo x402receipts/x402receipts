@@ -2,7 +2,7 @@
 
 Accounting infrastructure for autonomous spending. This package records every x402 purchase an agent makes as a receipt and reports it to [x402receipts](https://x402receipts.com), where it is reconciled against the on-chain transaction, anchored with verifiable evidence and shown to finance as a monthly statement.
 
-There is no API key. The agent pays USD 1 per calendar month, in USDC on Base or Solana, from the wallet it already buys with — with its first upload of the month; every upload after that is free. That wallet is the account. The owner signs in with the same wallet.
+There is no API key. The agent pays USD 0.01, in USDC on Base or Solana, from the wallet it already buys with — with its first upload of any given day; every upload after that is free until the day ends. Days it buys nothing cost nothing, so a month can never come to more than 31 cents. That wallet is the account. The owner signs in with the same wallet.
 
 ```ts
 import { wrapFetchWithPayment } from "@x402/fetch";
